@@ -1,0 +1,4 @@
+"""Gatekeeper Bot - Discord CAS Verification Bot"""
+
+__version__ = "1.0.0"
+__author__ = "Lukas Majoros"

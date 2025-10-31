@@ -1,0 +1,24 @@
+# Discord
+discord.py>=2.3.0
+
+# Database
+asyncpg>=0.29.0
+SQLAlchemy>=2.0.0
+alembic>=1.12.0
+
+# Web Server
+aiohttp>=3.9.0
+Jinja2>=3.1.0
+
+# Security & Auth
+cryptography>=41.0.0
+python-jose>=3.3.0
+
+# Configuration
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Utilities
+python-dateutil>=2.8.0
+pytz>=2023.3

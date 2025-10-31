@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gatekeeper-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${WEB_SERVER_PORT:-8080}:8080"
+    depends_on:
+      - db
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - gatekeeper-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: gatekeeper-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-gatekeeper}
+      POSTGRES_USER: ${DB_USER:-gatekeeper}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - gatekeeper-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-gatekeeper}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  gatekeeper-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
