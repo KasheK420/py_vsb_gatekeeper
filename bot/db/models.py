@@ -4,7 +4,7 @@ Database models for Gatekeeper verification bot
 FIXED VERSION - Corrects User.id references to User.discord_id
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import (
@@ -63,8 +63,8 @@ class VerificationAudit(Base):
     result: Mapped[str] = mapped_column(String(32), nullable=False)  # success/failure
     error_message: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        default=datetime.utcnow, 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
 
@@ -80,7 +80,7 @@ class BotLog(Base):
     guild_id: Mapped[Optional[int]] = mapped_column(BigInteger)
     channel_id: Mapped[Optional[int]] = mapped_column(BigInteger)
     user_id: Mapped[Optional[int]] = mapped_column(BigInteger)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Optional fields for compatibility with other bots
     bot_name: Mapped[Optional[str]] = mapped_column(String(64))
@@ -109,8 +109,8 @@ class VerificationState(Base):
     
     # Expiry
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        default=datetime.utcnow, 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -149,8 +149,8 @@ class UserVerificationData(Base):
     preserved_roles: Mapped[Optional[dict]] = mapped_column(JSON)
     
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        default=datetime.utcnow, 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
 
@@ -184,8 +184,8 @@ class VerificationWave(Base):
     )  # pending, active, completed
     
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        default=datetime.utcnow, 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
@@ -243,7 +243,7 @@ class UserStatusHistory(Base):
     moderator_id: Mapped[Optional[int]] = mapped_column(BigInteger)
     
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        default=datetime.utcnow, 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         nullable=False
     )

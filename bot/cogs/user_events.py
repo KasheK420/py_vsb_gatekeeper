@@ -114,7 +114,13 @@ class UserEventsCog(commands.Cog):
             try:
                 ban_entry = await guild.fetch_ban(user)
                 reason = ban_entry.reason
-            except:
+            except discord.NotFound:
+                reason = None
+            except discord.Forbidden:
+                logger.warning("Missing permission to fetch ban entry")
+                reason = None
+            except discord.HTTPException as e:
+                logger.debug(f"Failed to fetch ban entry: {e}")
                 reason = None
             
             # Log event

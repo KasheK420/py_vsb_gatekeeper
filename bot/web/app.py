@@ -6,7 +6,7 @@ Uses aiohttp for async web serving.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from aiohttp import web
 
@@ -25,9 +25,11 @@ class OAuthWebServer:
         self.config = config
         self.cas_service = cas_service
         self.verification_service = verification_service
-        
+
         self.app = web.Application()
         self.request_count = 0
+        self.runner = None
+        self.site = None
         self.setup_routes()
     
     def setup_routes(self):
@@ -134,7 +136,7 @@ class OAuthWebServer:
             user_info = {
                 "display_name": cas_data.get("cn", "User"),
                 "login": cas_data.get("login", "unknown"),
-                "linked_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+                "linked_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             }
             
             logger.info(f"Successful verification for Discord user {discord_id}")
@@ -410,11 +412,11 @@ class OAuthWebServer:
     async def start(self):
         """Start the web server"""
         try:
-            runner = web.AppRunner(self.app)
-            await runner.setup()
-            site = web.TCPSite(runner, self.config.web_server_host, self.config.web_server_port)
-            await site.start()
-            
+            self.runner = web.AppRunner(self.app)
+            await self.runner.setup()
+            self.site = web.TCPSite(self.runner, self.config.web_server_host, self.config.web_server_port)
+            await self.site.start()
+
             logger.info(f"OAuth web server started on {self.config.web_server_host}:{self.config.web_server_port}")
         except Exception as e:
             logger.error(f"Failed to start web server: {e}", exc_info=True)
@@ -423,3 +425,16 @@ class OAuthWebServer:
     async def stop(self):
         """Stop the web server"""
         logger.info("OAuth web server shutting down")
+
+        try:
+            if self.site:
+                await self.site.stop()
+                logger.debug("Web server site stopped")
+
+            if self.runner:
+                await self.runner.cleanup()
+                logger.debug("Web server runner cleaned up")
+
+            logger.info("OAuth web server shutdown complete")
+        except Exception as e:
+            logger.error(f"Error during web server shutdown: {e}", exc_info=True)
