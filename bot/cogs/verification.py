@@ -36,10 +36,14 @@ class VerificationCog(commands.Cog):
                 if msg.author == self.bot.user:
                     try:
                         await msg.delete()
-                    except:
-                        pass
-        except:
-            pass
+                    except discord.Forbidden:
+                        logger.warning(f"Missing permission to delete message {msg.id}")
+                    except discord.HTTPException as e:
+                        logger.debug(f"Failed to delete message {msg.id}: {e}")
+        except discord.Forbidden:
+            logger.warning(f"Missing permission to read channel history in {channel.id}")
+        except discord.HTTPException as e:
+            logger.error(f"Failed to fetch channel history: {e}")
         
         # Create embed
         embed = discord.Embed(
@@ -205,15 +209,19 @@ class VerificationCog(commands.Cog):
         # Delete user messages in verification channel
         try:
             await msg.delete()
-        except:
-            pass
+        except discord.Forbidden:
+            logger.warning(f"Missing permission to delete message in verification channel")
+        except discord.HTTPException as e:
+            logger.debug(f"Failed to delete user message: {e}")
         
         # Check if already verified
         if await self.verification_service.is_verified(msg.author.id):
             try:
                 await msg.author.send("✅ Již jsi ověřený! / You are already verified!")
-            except:
-                pass
+            except discord.Forbidden:
+                logger.debug(f"Cannot send DM to user {msg.author.id} - DMs disabled")
+            except discord.HTTPException as e:
+                logger.debug(f"Failed to send DM to user {msg.author.id}: {e}")
             return
 
 

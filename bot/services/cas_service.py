@@ -119,31 +119,33 @@ class CASService:
         
         try:
             # 1. Validate state and get Discord ID
+            # To optimize lookup, we need to hash the state with each possible discord_id
+            # However, since we don't know the discord_id yet, we'll search non-expired states
+            # This is still O(n) but we filter first by expiry and limit results
             async with get_session() as session:
-                # Hash the incoming state
-                # We need to find the matching verification state
-                # Since we don't know discord_id yet, we search for non-expired states
+                # Fetch only non-expired states to reduce search space
                 result = await session.execute(
                     select(VerificationState).where(
                         VerificationState.expires_at > datetime.now(timezone.utc)
-                    )
+                    ).limit(100)  # Limit to prevent DoS from many pending verifications
                 )
                 verification_states = result.scalars().all()
-                
+
                 matching_state = None
                 discord_id = None
-                
+
                 # Find matching state by reconstructing hash
+                # This is unavoidable O(n) since state hash includes discord_id
                 for vs in verification_states:
                     test_hash = hashlib.sha256(
                         f"{state}:{vs.discord_id}:{self.state_secret}".encode()
                     ).hexdigest()
-                    
+
                     if test_hash == vs.state:
                         matching_state = vs
                         discord_id = vs.discord_id
                         break
-                
+
                 if not matching_state:
                     logger.warning(f"Invalid or expired state: {state[:8]}...")
                     return {"success": False, "error": "Invalid or expired verification state"}
@@ -195,8 +197,8 @@ class CASService:
                     error_message=str(e),
                     ip_address=ip_address
                 )
-            except:
-                pass
+            except Exception as audit_error:
+                logger.error(f"Failed to log verification audit: {audit_error}")
             
             return {"success": False, "error": str(e)}
     
